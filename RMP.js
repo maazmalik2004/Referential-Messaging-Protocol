@@ -128,13 +128,8 @@
 // }))
 
 
-let reject = null;
 let p = new Promise((res, rej)=>{
-    reject = rej
+    setTimeout(()=>{res(10)},10000)
 })
 
-try{
-    reject(10)
-}catch{
-    console.log("rejected")
-}
+console.log(await p)
