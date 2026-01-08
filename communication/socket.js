@@ -10,20 +10,20 @@ class Socket {
         this.serverIp = object.serverIp;
         this.serverPort = object.serverPort;
 
-        this.server = new WebSocketServer({ port: this.port });
-        this.client = new WebSocket(`ws://${this.serverIp}:${this.serverPort}`)
-
         this.timeout = object.timeout || 3000;
         this.maxResendAttempts = object.maxResendAttempts || 3;
 
         this.unacknowledgedMessages = new Map();
         this.deliveredMessages = new Set();
 
+        this.clientReady = false
+
+        //setting up the server
+        this.server = new WebSocketServer({ port: this.port });
         this.server.on("connection", socket => {
             console.log("[COMMUNICATION/SERVER] new client connected");
 
             socket.on("message", data => {
-                console.log("[COMMUNICATION/SERVER] raw data received ",data);
                 let message = JSON.parse(data);
                 console.log("[COMMUNICATION/SERVER] parsed message ", message)
 
@@ -31,15 +31,16 @@ class Socket {
                     this.unacknowledgedMessages.delete(message.communicationHeader.id);
                     return;
                 } 
-                
+            
+                //sending acknowledgement
                 let ackMessage = {
                     communicationHeader:{
                         label:"ACK",
                         id:message.communicationHeader.id
                     }
                 }
-
-                this.client.send(JSON.stringify(ackMessage))
+                
+                if(this.clientReady)this.client.send(JSON.stringify(ackMessage))
 
                 //de-duplication
                 if(!this.deliveredMessages.has(message.communicationHeader.id)){
@@ -54,19 +55,41 @@ class Socket {
             })
 
             socket.on("error", (error) => {
-                throw new Error("[COMMUNICATION/SERVER] socket error ", error)
+                // throw new Error("[COMMUNICATION/SERVER] socket error ", error)
+                console.log("[COMMUNICATION/SERVER] socket error ", error)
             })
         })
 
-        this.client.on("open", (object)=>{
-            console.log("[COMMUNICATION/CLIENT] connected to server ", object);
-        })
+        //setting up the client
+        setInterval(()=>{
+            if(this.clientReady)return;
+            console.log("[COMMUNICATION] attempting connection")
+            this.client = new WebSocket(`ws://${this.serverIp}:${this.serverPort}`)
+
+            this.client.on("open", (object)=>{
+                console.log("[COMMUNICATION/CLIENT] connected to server ", object);
+                // clearInterval(intervalId)
+                this.clientReady = true;
+                this.emitter.emit("connected")
+            })
+
+            this.client.on("close", (code, reason) => {
+                console.log("[COMMUNICATION/CLIENT] connection closed ", code+", "+reason)
+                this.clientReady = false;
+                this.client.removeAllListeners();
+                this.emitter.emit("disconnected")
+            })
+
+            this.client.on("error", (error) => {
+                console.log("[COMMUNICATION/CLIENT] error ", error)
+            })
+        },3000);
     }
 
     resend(message){
         if(message.communicationHeader.resendAttempts < this.maxResendAttempts){
             message.communicationHeader.resendAttempts = message.communicationHeader.resendAttempts + 1;
-            this.client.send(message);
+            this.client.send(JSON.stringify(message));
             
             this.unacknowledgedMessages.set(message.communicationHeader.id, message);
             setTimeout(()=>{
