@@ -9,5 +9,9 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "module"
+  "type": "module",
+  "dependencies": {
+    "uuid": "^13.0.0",
+    "ws": "^8.19.0"
+  }
 }
