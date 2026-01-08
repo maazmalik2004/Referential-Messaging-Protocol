@@ -13,6 +13,10 @@ let rmp = new RMP({
     adapter:communication
 })
 
+rmp.on("message",message => {
+    console.log(message)
+})
+
 if(params[2] == 3000){
     setTimeout(()=>{
         let message1 = {
