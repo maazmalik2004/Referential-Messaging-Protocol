@@ -38,14 +38,22 @@ class RMP{
         }
     }
 
-    send(msg){
+    stage(message){
+        return message;
+        let id=utils.getRandomNumber();
         message={
             payload:msg,
             rmpHeader:{
                 // bypass:false,
-                id:utils.getRandomNumber(),
+                id:id,
             }
         }
+    }
+
+    send(msg){
+        this.parse(msg,[id]);
+        
+        this.adapter.send
     }
 
     on(eventName,callback){
@@ -89,8 +97,10 @@ export default RMP;
 //     a: { b: { c: { d: "depth-check" } } }
 // };
 
-// To run the test:
-// const rmp = new RMP({ adapter: {} });
+const message=1;
+//To run the test:
+const rmp = new RMP({ adapter: {} });
+console.log(message==rmp.stage(message))
 // const path = ["1"];
 
 // rmp.parse(["abcdefg",1,null,true,false], path);
