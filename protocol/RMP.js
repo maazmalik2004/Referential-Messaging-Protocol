@@ -6,54 +6,60 @@ class RMP{
     constructor(object){
         this.emitter=new EventEmitter();
         this.adapter=object.adapter;
-        this.hashValueMapping=new Map()
+        this.hashValueMapping = new Map();
+        this.idMessageMapping = new Map();
+
+        this.adapter.on("message",message=>{
+            console.log("[RMP] received message ",message)
+        })
     }
 
     parse(object,currentPath){
-       
-        // console.log(currentPath)
-
-        if(typeof object == "boolean" || !object || typeof object == "string" || typeof object == "number"){
+        if(this.isPrimitive(object)){
             // console.log(object);
             this.hashValueMapping.set(utils.getHash(currentPath),object)
             return;
         }
-
         if(Array.isArray(object)){
             for(let i=0;i<object.length;i++){
                 let copiedPath=[...currentPath,i]
-                // console.log("ullulu",JSON.stringify(copiedPath));
                 this.parse(object[i],copiedPath)
             }
             return;
         }
-        
         for(const [key,value] of Object.entries(object)){
             let copiedPath=[...currentPath,key]
             let address=utils.getHash(copiedPath);
             this.hashValueMapping.set(utils.getHash(copiedPath),value);
-            
-            this.parse(value,copiedPath)
-            
+            this.parse(value,copiedPath) 
         }
     }
 
-    stage(message){
-        return message;
-        let id=utils.getRandomNumber();
+    stage(object, id = null){
+        let id=id || utils.getRandomNumber();
         message={
-            payload:msg,
+            payload:object,
             rmpHeader:{
-                // bypass:false,
-                id:id,
+                id:id
             }
         }
+        this.idMessageMapping.set(id, message)
+        return id;
     }
 
-    send(msg){
-        this.parse(msg,[id]);
-        
-        this.adapter.send
+    isPrimitive(object){
+        return typeof object == "boolean" || typeof object == "string" || typeof object == "number" || object == null || object == undefined;
+    }
+
+    getReference(id, path = []){
+        path.shift[id]
+        return {
+            _rmpref_: utils.getHash(path)
+        }
+    }
+
+    send(id){
+        this.adapter.send(this.idMessageMapping.get(id))
     }
 
     on(eventName,callback){
