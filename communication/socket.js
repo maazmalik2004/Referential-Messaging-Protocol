@@ -39,14 +39,13 @@ class Socket {
                     }
                 }
 
-                this.client.send(ackMessage)
+                this.client.send(JSON.stringify(ackMessage))
 
-                delete message.communicationHeader;
-                
                 //de-duplication
                 if(!this.deliveredMessages.has(message.communicationHeader.id)){
-                    this.emitter.emit("message",message)
                     this.deliveredMessages.add(message.communicationHeader.id)
+                    delete message.communicationHeader;
+                    this.emitter.emit("message",message)
                 }
             })
 
@@ -71,7 +70,7 @@ class Socket {
             
             this.unacknowledgedMessages.set(message.communicationHeader.id, message);
             setTimeout(()=>{
-                if(this.unacknowledgedMessages.has(id)){
+                if(this.unacknowledgedMessages.has(message.communicationHeader.id)){
                     this.resend(message);
                 }
             },  this.timeout)
@@ -92,7 +91,7 @@ class Socket {
                 resendAttempts:0
             }
         }
-        this.client.send(message);
+        this.client.send(JSON.stringify(message));
         
         this.unacknowledgedMessages.set(id, message);
         setTimeout(()=>{
@@ -107,21 +106,4 @@ class Socket {
     }
 }
 
-export default RPC;
-
-// {
-//     communicationHeader:{
-            // label:"ACK",
-            // id:
-
-//     }
-//     protocolHeader:{
-//         label:"MSG",
-//         version:1
-//         bypass:false,
-//         id:nuvndivnriuvhru
-//     }
-//     payload:{
-
-//     }
-// }
+export default Socket;
