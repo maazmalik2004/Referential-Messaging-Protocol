@@ -13,8 +13,8 @@ let rmp = new RMP({
     adapter:communication
 })
 
-rmp.on("message",message => {
-    console.log(message)
+rmp.on("message",async(message) => {
+    console.log("[APP] received message",await message.name);
 })
 
 if(params[2] == 3000){
@@ -24,6 +24,7 @@ if(params[2] == 3000){
         }
 
         let m1id = rmp.stage(message1);
+        console.log("get reference output ",rmp.getReference(m1id,["name"]))
         console.log("m1id",m1id)
 
         let message2 = {
@@ -33,7 +34,7 @@ if(params[2] == 3000){
         let m2id = rmp.stage(message2);
 
         let message3 = {
-            friendName:rmp.getReference(m2id,["name"])
+            name:rmp.getReference(m2id,["name"])
         }
 
         let m3id = rmp.stage(message3)
@@ -42,8 +43,13 @@ if(params[2] == 3000){
             _rmpid_:m3id,
             ...message3
         }
-        rmp.send(m1id)
-        rmp.send(m2id)
         rmp.send(m3id)
+
+        setTimeout(()=>{
+            rmp.send(m1id)
+            setTimeout(()=>{
+                rmp.send(m2id)
+            },3000)
+        },3000)
     },7000)
 }

@@ -14,12 +14,13 @@ class RMP{
             console.log("[RMP] received message ",message)
 
             this.idMessageMapping.set(message.rmpHeader.id, message)
-            console.log("baiganayein1",this.hashValueMapping.size)
-            console.log("baiganayein1",this.hashDeferredPromiseMapping.size)
-            this.parse(message.payload, [message.rmpHeader.id])
+           
+            let result = this.parse(message.payload, [message.rmpHeader.id])
+
             console.log("baiganayein",this.hashValueMapping)
             console.log("baiganayein",this.hashDeferredPromiseMapping)
-            this.emitter.emit("message", message.payload)
+
+            this.emitter.emit("message", result)
         })
 
         this.adapter.on("connected",()=>{
@@ -50,57 +51,68 @@ class RMP{
 
     
     resolve(reference){
-        if(this.hashValueMapping.has(reference._rmpref_)){
-            let value = this.hashValueMapping.get(reference._rmpref_);
-            if(this.isReference(value)){
-                return this.resolve(value)
+        if(this.isReference(reference)){
+            if(this.hashValueMapping.has(reference._rmpref_)){
+                let value = this.hashValueMapping.get(reference._rmpref_);
+                if(this.isReference(value)){
+                    return this.resolve(value)
+                }else{
+                    return value;
+                }
             }else{
-                return value;
+                let defprom =  this.hashDeferredPromiseMapping.get(reference._rmpref_) || this.getDeferredPromise()
+                this.hashDeferredPromiseMapping.set(reference._rmpref_, defprom)
+                return defprom.promise
             }
-        }else{
-            let defprom =  this.hashDeferredPromiseMapping.get(reference._rmpref_) || this.getDeferredPromise()
-            this.hashDeferredPromiseMapping.set(reference._rmpref_, defprom)
-            return defprom.promise
+        }
+        else{
+            return reference;
         }
     }
 
     parse(object,currentPath){
-        console.log("UWU ONIICHAN")
         if(this.isPrimitive(object)){
-            let address = utils.getHash(currentPath);
-            if(this.hashDeferredPromiseMapping.has(address)){
-                this.hashDeferredPromiseMapping.get(address).resolve(object)
-            }
-            this.hashValueMapping.set(address,object)
-            return;
+            let address = JSON.stringify(currentPath);
+            this.register(address, object)
+            return object;
         }
-        if(this.isReference(object)){
-            let address = utils.getHash(currentPath)
-            this.hashValueMapping.set(address,object)
-            object = this.resolve(object);
-            return;
+        else if(this.isReference(object)){
+            let address = JSON.stringify(currentPath)
+            this.register(address,object)
+            return this.resolve(object);
         }
-        if(Array.isArray(object)){
+        else if(Array.isArray(object)){
             for(let i=0;i<object.length;i++){
                 let copiedPath=[...currentPath,i]
-                let address = utils.getHash(copiedPath)
-                if(this.hashDeferredPromiseMapping.has(address)){
-                    this.hashDeferredPromiseMapping.get(address).resolve(object[i])
+                let address = JSON.stringify(copiedPath)
+                this.register(address, object[i])
+                if(this.isReference(object[i])){
+                    object[i] = this.resolve(object[i])
+                    continue;
                 }
-                this.hashValueMapping.set(address, object[i])
-                this.parse(object[i],copiedPath)
+                object[i] = this.parse(object[i],copiedPath)
             }
-            return;
+            return object;
         }
         for(const [key,value] of Object.entries(object)){
             let copiedPath=[...currentPath,key]
-            let address = utils.getHash(copiedPath);
-            if(this.hashDeferredPromiseMapping.has(address)){
-                this.hashDeferredPromiseMapping.get(address).resolve(object)
+            let address = JSON.stringify(copiedPath)
+            this.register(address,value)           
+            if(this.isReference(object.key)){
+                object[key] = this.resolve(value);
+                continue;
             }
-            this.hashValueMapping.set(address,value);
-            this.parse(value,copiedPath) 
+
+            object[key] = this.parse(value,copiedPath)
         }
+        return object
+    }
+
+    register(address, value){
+        if(this.hashDeferredPromiseMapping.has(address)){
+            this.hashDeferredPromiseMapping.get(address).resolve(this.resolve(value));
+        }
+        this.hashValueMapping.set(address, value);
     }
 
     stage(object, identifier){
@@ -118,6 +130,7 @@ class RMP{
     }
 
     isReference(object){
+        if(!object)return false
         return !!object._rmpref_
     }
 
@@ -125,10 +138,12 @@ class RMP{
         return typeof object == "boolean" || typeof object == "string" || typeof object == "number" || object == null || object == undefined;
     }
 
-    getReference(message, path = []){
-        path.shift(message._rmpid_)
+    getReference(id, path){
+        path = path || [];
+        path.unshift(id)
+        console.log("whatthefuck",path)
         return {
-            _rmpref_: utils.getHash(path)
+            _rmpref_: JSON.stringify(path)
         }
     }
 
