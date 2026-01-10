@@ -7,7 +7,8 @@ let rmp = new RMP({
     port:params[2],
     remoteIp:params[3],
     remotePort:params[4],
-    persistence: true
+    persistence: true,
+    reemit: false
 })
 
 rmp.on("message",async(message) => {

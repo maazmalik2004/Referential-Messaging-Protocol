@@ -13,6 +13,7 @@ class RMP{
         })
         this.logger=new Logger();
         this.persistence = object.persistence;
+        this.reemit = object.reemit;
 
         this.hashValueMapping = new Map();
         this.hashDeferredPromiseMapping = new Map();
@@ -74,7 +75,9 @@ class RMP{
             console.log("[RMP] loading message ",message)
             this.idMessageMapping.set(message.rmpHeader.id, message);
             let result = this.parse(message.payload,[message.rmpHeader.id]);
-            // this.emitter.emit("message",result);
+            if(this.reemit){
+                this.emitter.emit("message",result)
+            }
         }
     }
 
