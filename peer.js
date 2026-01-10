@@ -3,14 +3,11 @@ import RMP from "./protocol/RMP.js";
 
 let params = process.argv;
 
-let communication = new Communication({
-    port:params[2],
-    serverIp:params[3],
-    serverPort:params[4]
-})
-
 let rmp = new RMP({
-    adapter:communication
+    port:params[2],
+    remoteIp:params[3],
+    remotePort:params[4],
+    persistence: true
 })
 
 rmp.on("message",async(message) => {
@@ -42,10 +39,6 @@ if(params[2] == 3000){
 
         let m3id = rmp.stage(message3)
 
-        // let message3a = {
-        //     _rmpid_:m3id,
-        //     ...message3
-        // }
         rmp.send(m3id)
 
         setTimeout(()=>{

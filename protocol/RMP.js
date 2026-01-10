@@ -1,17 +1,32 @@
 import { EventEmitter } from "node:events";
 import utils from "../utils/utils.js";
+import Communication from "../communication/socket.js"
+import Logger from "../logging/logger.js"
 
 class RMP{
     constructor(object){
         this.emitter=new EventEmitter();
-        this.adapter=object.adapter;
+        this.adapter=new Communication({
+            port:object.port,
+            serverIp:object.remoteIp,
+            serverPort:object.remotePort
+        })
+        this.logger=new Logger();
+        this.persistence = object.persistence;
+
         this.hashValueMapping = new Map();
         this.hashDeferredPromiseMapping = new Map();
-
         this.idMessageMapping = new Map();
+
+        if(this.persistence){
+            this.loadMessages();
+        }else{
+            this.reset();
+        }
 
         this.adapter.on("message",message=>{
             console.log("[RMP] received message ",message)
+            this.logger.logMessage(message)
 
             this.idMessageMapping.set(message.rmpHeader.id, message)
            
@@ -34,6 +49,33 @@ class RMP{
         this.adapter.on("dropped",(message)=>{
             this.emitter.emit("dropped", message);
         })
+    }
+
+    reset(){
+        //clear logs
+        this.logger.reset();
+ 
+        //reject all pending promises
+        for(let value of this.hashDeferredPromiseMapping.values()){
+            value.reject("RMP buffer reset");
+        }
+
+        //reset mappings
+        this.hashValueMapping = new Map();
+        this.hashDeferredPromiseMapping = new Map();
+        this.idMessageMapping = new Map();
+
+        console.log("[RMP] RMP buffer cleared")
+    }
+
+    loadMessages(){
+        let messages = this.logger.getMessages();
+        for (let message of messages){
+            console.log("[RMP] loading message ",message)
+            this.idMessageMapping.set(message.rmpHeader.id, message);
+            let result = this.parse(message.payload,[message.rmpHeader.id]);
+            // this.emitter.emit("message",result);
+        }
     }
 
     getDeferredPromise() {
@@ -98,7 +140,7 @@ class RMP{
             let copiedPath=[...currentPath,key]
             let address = JSON.stringify(copiedPath)
             this.register(address,value)           
-            if(this.isReference(object.key)){
+            if(this.isReference(value)){
                 object[key] = this.resolve(value);
                 continue;
             }
@@ -117,7 +159,6 @@ class RMP{
 
     stage(object, identifier){
         let id = identifier || utils.getRandomNumber();
-        console.log("bhutagorilla",id)
         let message={
             payload:object,
             rmpHeader:{
@@ -141,7 +182,6 @@ class RMP{
     getReference(id, path){
         path = path || [];
         path.unshift(id)
-        console.log("whatthefuck",path)
         return {
             _rmpref_: JSON.stringify(path)
         }
@@ -157,66 +197,3 @@ class RMP{
 }
 
 export default RMP;
-
-
-// // const complexTestData = {
-// //     // 1. Standard Nested Object
-// //     metadata: {
-// //         id: 500,
-// //         flags: {
-// //             isVerified: true,
-// //             priority: "high"
-// //         }
-// //     },
-// //     // 2. Mixed Array (Primitives + Objects + Nested Arrays)
-// //     logs: [
-// //         "system_start",
-// //         { event: "login", code: 200 },
-// //         [10, 20, [30]] 
-// //     ],
-// //     // 3. Edge Case: Empty structures
-// //     emptyStates: {
-// //         emptyObj: {},
-// //         emptyArr: []
-// //     },
-// //     // 4. Different Primitive types (Strings, Numbers)
-// //     values: {
-// //         score: 98.5,
-// //         label: "test-run",
-// //         zero: 0,
-// //         emptyString: ""
-// //     },
-// //     // 5. Null (to test your !object check)
-// //     nullable: null,
-// //     // 6. Deeply nested path
-// //     a: { b: { c: { d: "depth-check" } } }
-// // };
-
-// const message=1;
-// //To run the test:
-// const rmp = new RMP({ adapter: {} });
-// console.log(message==rmp.stage(message))
-// // const path = ["1"];
-
-// // rmp.parse(["abcdefg",1,null,true,false], path);
-
-// // // Check the results
-// // console.log("Mapped Hashes:");
-// // console.log(rmp.hashValueMapping);
-
-
-// let m1 = {
-//     name:[{
-//         name:rmp.getReference(m3),
-//         age:"male",
-//         gender:21
-//     }]
-// }
-
-// let m1id = rmp.stage(m1)
-
-// let m2 = {
-//     name:rmp.getReference(m1id,["name",0,"gender"])
-// }
-
-// rmp.stage(m1, m1id)
