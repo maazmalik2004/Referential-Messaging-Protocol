@@ -1,7 +1,7 @@
 <img width="1395" height="793" alt="image" src="https://github.com/user-attachments/assets/b50d2b2a-ba28-43cf-8bb5-929abafd40cc" />
 <img width="1825" height="787" alt="image" src="https://github.com/user-attachments/assets/365dcfa1-efe4-4f1c-b4d2-eb4314159ebf" />
 
-# RMP is a protocol for linking and resolving data within out of order messages.
+# RMP is a protocol for linking and resolving data and references within out of order messages.
 ## 1) Sending a token/ certificate everytime
  In traditional systems, a token or a cryptographic certificate is attached to each request. A token can be kilobytes in size. Even though it might not seem like much, it incurs a significant overhead. Consider a certificate signed by a private key. It is 594 Bytes in size (In UTF8 format, each character is a byte in size). For a thousand requests the resulting overhead is 594 Kilobytes. With RMP, the certificate can be sent once and simply referenced in latter messages. The resulting overhead is 594 + 32 X 999 = 32,562 Bytes (32.562 Kilobytes), an improvement of 94.52%. 
 
