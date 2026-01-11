@@ -5,7 +5,7 @@
 
 # Use Cases
 ## 1) Sending a token/ certificate everytime
-### In traditional systems, a token or a cryptographic certificate is attached to each request. A token can be kilobytes in size. Even though it might not seem like much, it incurs a significant overhead. Consider a certificate signed by a private key. It is 594 Bytes in size (In UTF8 format, each character is a byte in size). For a thousand requests the resulting overhead is 594 Kilobytes. With RMP, the certificate can be sent once and simply referenced in latter messages. The resulting overhead is 594 + 32 X 999 = 32,562 Bytes (32.562 Kilobytes), an improvement of 94.52%. 
+ In traditional systems, a token or a cryptographic certificate is attached to each request. A token can be kilobytes in size. Even though it might not seem like much, it incurs a significant overhead. Consider a certificate signed by a private key. It is 594 Bytes in size (In UTF8 format, each character is a byte in size). For a thousand requests the resulting overhead is 594 Kilobytes. With RMP, the certificate can be sent once and simply referenced in latter messages. The resulting overhead is 594 + 32 X 999 = 32,562 Bytes (32.562 Kilobytes), an improvement of 94.52%. 
 
 ```PEM
 -----BEGIN CERTIFICATE-----
