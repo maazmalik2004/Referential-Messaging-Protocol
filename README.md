@@ -3,8 +3,9 @@
 <img width="1395" height="793" alt="image" src="https://github.com/user-attachments/assets/b50d2b2a-ba28-43cf-8bb5-929abafd40cc" />
 <img width="1825" height="787" alt="image" src="https://github.com/user-attachments/assets/365dcfa1-efe4-4f1c-b4d2-eb4314159ebf" />
 
-## Sending a token/ certificate everytime
-In traditional systems, a token or a cryptographic certificate is attached to each request. A token can be kilobytes in size. Even though it might not seem like much, it incurs a significant overhead. Consider a certificate signed by a private key. It is **594 Bytes** in size (In UTF8 format, each character is a byte in size). For a thousand requests the resulting overhead is **594 Kilobytes**. With RMP, the certificate can be sent once and simply referenced in latter messages. The resulting overhead is 594 + 32 X 999 =** 32,562 Bytes (32.562 Kilobytes)**, an improvement of 94.52%. 
+# Use Cases
+## 1) Sending a token/ certificate everytime
+### In traditional systems, a token or a cryptographic certificate is attached to each request. A token can be kilobytes in size. Even though it might not seem like much, it incurs a significant overhead. Consider a certificate signed by a private key. It is **594 Bytes** in size (In UTF8 format, each character is a byte in size). For a thousand requests the resulting overhead is **594 Kilobytes**. With RMP, the certificate can be sent once and simply referenced in latter messages. The resulting overhead is 594 + 32 X 999 =** 32,562 Bytes (32.562 Kilobytes)**, an improvement of 94.52%. 
 
 ```PEM
 -----BEGIN CERTIFICATE-----
@@ -20,7 +21,7 @@ hzXOWIMDof6F8YkFow8=
 -----END CERTIFICATE-----
 
 ```
-Client
+### Client
 ```JS
 import RMP from "./protocol/RMP.js";
 
@@ -59,7 +60,7 @@ let messageId = rmp.stage(message);
 rmp.send(messageId);
 rmp.send(certificateId);
 ```
-Server
+### Server
 ```JS
 import RMP from "./protocol/RMP.js";
 
@@ -78,3 +79,8 @@ rmp.on("message",async(message) => {
     console.log("[APP] value resolved now",await message.certificate);
 });
 ```
+
+## 2) Redundant Stale Copies
+During Network address translation (NAT) in computer networking, the router, updates the source IP field with its own public IP in the IP header. however a copy of the source IP might be present in the application payload which the server will use to carry out some networking level task at the application level. This results in two out of sync copies which dont match. RMP ensures a single source of truth where the one copy can reference the other.  
+
+<img width="956" height="785" alt="image" src="https://github.com/user-attachments/assets/15d344e7-31a5-4678-af9d-be6cb09ecaa1" />
