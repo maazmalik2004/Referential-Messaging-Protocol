@@ -81,6 +81,6 @@ rmp.on("message",async(message) => {
 ```
 
 ## 2) Redundant Stale Copies
-During Network address translation (NAT) in computer networking, the router, updates the source IP field with its own public IP in the IP header. however a copy of the source IP might be present in the application payload which the server will use to carry out some networking level task at the application level. This results in two out of sync copies which dont match. RMP ensures a single source of truth where the one copy can reference the other.  
+During Network address translation (NAT) in computer networking, the router, updates the source IP field with its own public IP in the IP header. however a copy of the source IP might be present in the application payload which the server will use to carry out some networking level task at the application level which is common in custom protocols or P2P systems. This results in two out of sync copies which dont match. RMP ensures a single source of truth where the one copy can reference the other.  
 
 <img width="956" height="785" alt="image" src="https://github.com/user-attachments/assets/15d344e7-31a5-4678-af9d-be6cb09ecaa1" />
