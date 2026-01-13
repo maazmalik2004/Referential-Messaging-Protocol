@@ -1,4 +1,6 @@
 <img width="3279" height="1901" alt="Add a subheading (8)" src="https://github.com/user-attachments/assets/91b202c8-13ef-4bc1-9ac1-219416e3b826" />
+
+## Consider a very simple scenario
 <img width="1825" height="787" alt="image" src="https://github.com/user-attachments/assets/365dcfa1-efe4-4f1c-b4d2-eb4314159ebf" />
 
 ### RMP is a protocol for linking and resolving data and references in out of order messages. It guarentees eventual resolution.
@@ -84,3 +86,9 @@ rmp.on("message",async(message) => {
 During Network address translation (NAT) in computer networking, the router, updates the source IP field with its own public IP in the IP header. however a copy of the source IP might be present in the application payload which the server will use to carry out some networking level task at the application level which is common in custom protocols or P2P systems. This results in two out of sync copies which dont match. RMP ensures a single source of truth where the one copy can reference the other.  
 
 <img width="956" height="785" alt="image" src="https://github.com/user-attachments/assets/15d344e7-31a5-4678-af9d-be6cb09ecaa1" />
+
+## 3) Ordering of Blocks in a Blockchain
+In a blockchain, blocks may arrive out of order. Each node must reorder the blocks correctly and agree with other nodes on the order of the blocks. With RMP blocks can simply reference previous blocks in the chain, resolving eventually, no matter the order in which they arrive in. 
+
+## 4) The Curse of Collaboration
+In a collaborative environment like canva, google docs, colab etc. the same set of styles is applied at 10s of places across the document. Each time, the style set/ set of delta changes is sent from the frontend to the backend. Instead, the style information, document information or the collaborator information can be sent once and referenced later. Instead of fetching all of user information everytime, references can resolve it prior to reaching the server side application while the frontend is never even made aware of this additional information except in the form of references.
