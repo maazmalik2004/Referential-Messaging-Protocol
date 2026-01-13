@@ -1,7 +1,7 @@
 <img width="3279" height="1901" alt="Add a subheading (8)" src="https://github.com/user-attachments/assets/91b202c8-13ef-4bc1-9ac1-219416e3b826" />
 <img width="1825" height="787" alt="image" src="https://github.com/user-attachments/assets/365dcfa1-efe4-4f1c-b4d2-eb4314159ebf" />
 
-### RMP is a protocol for linking and resolving data and references in out of order messages.
+### RMP is a protocol for linking and resolving data and references in out of order messages. It guarentees eventual resolution.
 
 # Use Case Examples
 ## 1) Sending a token/ certificate everytime
