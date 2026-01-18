@@ -51,7 +51,7 @@ rmp.on("disconnected",()=>{
 })
 ```
 ```TERMINAL
-node peer.js 3000 localhost 5000
+> node peer.js 3000 localhost 5000
 ```
 ```TERMINAL
 [APP] connected
