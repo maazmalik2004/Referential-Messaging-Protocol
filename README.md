@@ -1,12 +1,94 @@
 <img width="3279" height="1901" alt="Add a subheading (8)" src="https://github.com/user-attachments/assets/91b202c8-13ef-4bc1-9ac1-219416e3b826" />
-
-## Consider a very simple scenario
 <img width="1825" height="787" alt="image" src="https://github.com/user-attachments/assets/365dcfa1-efe4-4f1c-b4d2-eb4314159ebf" />
+
+## ➲ Installation
+```TERMINAL
+> npm install rmp-broker
+```
+
+## ➲ Code
+### Sender
+```JS
+import RMP from "rmp-broker/protocol/RMP.js";
+
+let params = process.argv;
+
+let rmp = new RMP({
+    port:params[2],
+    remoteIp:params[3],
+    remotePort:params[4],
+    persistence: true,
+    reemit: false
+})
+
+rmp.on("connected",()=>{
+    console.log("[APP] connected");
+        if(params[2] == 3000){
+        let message1 = {
+            name:{
+                key:["targetValue"]
+            }
+        }
+
+        let m1id = rmp.stage(message1);
+
+        let message2 = {
+            name:rmp.getReference(m1id,["name","key",0])
+        }
+
+        let m2id = rmp.stage(message2);
+
+        //sending the reference before the value being referenced
+        rmp.send(m2id)
+        setTimeout(()=>{
+            rmp.send(m1id)
+        },3000)
+    }
+})
+
+rmp.on("disconnected",()=>{
+    console.log("[APP] disconnected");
+})
+```
+```TERMINAL
+node peer.js 3000 localhost 5000
+```
+```TERMINAL
+[APP] connected
+```
+### Receiver
+```JS
+import RMP from "rmp-broker/protocol/RMP.js";
+
+let params = process.argv;
+
+let rmp = new RMP({
+    port:params[2],
+    remoteIp:params[3],
+    remotePort:params[4],
+    persistence: true,
+    reemit: false
+})
+
+rmp.on("message",async(message) => {
+    console.log("[APP] received now")
+    console.log("[APP] resolved now",await message.name.key);
+})
+```
+```TERMINAL
+> node peer.js 5000 localhost 3000
+```
+```TERMINAL
+[APP] connected
+[APP] received now
+[APP] resolved now { key: [ 'targetValue' ] }
+```
 
 ### RMP is a protocol for linking and resolving data and references in out of order messages. It guarentees eventual resolution.
 
-# Use Case Examples
-## 1) Sending a token/ certificate everytime
+
+## ➲ Use Case Examples
+### 1) Sending a token/ certificate everytime
  In traditional systems, a token or a cryptographic certificate is attached to each request. A token can be kilobytes in size. Even though it might not seem like much, it incurs a significant overhead. Consider a certificate signed by a private key. It is 594 Bytes in size (In UTF8 format, each character is a byte in size). For a thousand requests the resulting overhead is 594 Kilobytes. With RMP, the certificate can be sent once and simply referenced in latter messages. The resulting overhead is 594 + 32 X 999 = 32,562 Bytes (32.562 Kilobytes), an improvement of 94.52%. 
 
 ```PEM
@@ -23,72 +105,14 @@ hzXOWIMDof6F8YkFow8=
 -----END CERTIFICATE-----
 
 ```
-### Client
-```JS
-import RMP from "./protocol/RMP.js";
 
-let params = process.argv;
-
-let rmp = new RMP({
-    port:params[2],
-    remoteIp:params[3],
-    remotePort:params[4],
-    persistence: true,
-    reemit: false
-});
-
-rmp.on("connected",()=>{
-    console.log("[APP] connected")
-});
-
-rmp.on("disconnected",()=>{
-    console.log("[APP] disconnected")
-});
-
-let certificateMessage = {
-    certificate:certificate
-};
-
-let certificateId = rmp.stage(certificateMessage);
-
-let message = {
-    certificate:rmp.getReference(certificateId, ["certificate"]),
-    data:data
-};
-
-let messageId = rmp.stage(message);
-
-//order doesn't matter. we can send the message before the certificate and it will be just as valid
-rmp.send(messageId);
-rmp.send(certificateId);
-```
-### Server
-```JS
-import RMP from "./protocol/RMP.js";
-
-let params = process.argv;
-
-let rmp = new RMP({
-    port:params[2],
-    remoteIp:params[3],
-    remotePort:params[4],
-    persistence: true,
-    reemit: false
-});
-
-rmp.on("message",async(message) => {
-    console.log("[APP] received message ",message)
-    console.log("[APP] value resolved now",await message.certificate);
-});
-```
-
-## 2) Redundant Stale Copies
-During Network address translation (NAT) in computer networking, the router, updates the source IP field with its own public IP in the IP header. however a copy of the source IP might be present in the application payload which the server will use to carry out some networking level task at the application level which is common in custom protocols or P2P systems. This results in two out of sync copies which dont match. RMP ensures a single source of truth where the one copy can reference the other.  
+### 2) Stale Copies During NAT
+Redundant and out-of-sync copies of data are eliminated when the Single Source of Truth can be referenced to. For example, during Network Address Translation (NAT), the router swaps the source IP in the IP header with the public IP address of the router. The application level might contain a copy of the source IP in order to perform a network level task at the application level (Common in custom protocols and P2P networks). This creates a stale copy as the router is a layer 3 device and never interacts with application data. RMP eliminates this by allowing the application-level copy to point to the Single Source of Truth via RMP references.
 
 <img width="956" height="785" alt="image" src="https://github.com/user-attachments/assets/15d344e7-31a5-4678-af9d-be6cb09ecaa1" />
 
-## 3) Ordering of Blocks in a Blockchain
+### 3) Ordering of Blocks in a Blockchain
 In a blockchain, blocks may arrive out of order. Each node must reorder the blocks correctly and agree with other nodes on the order of the blocks. With RMP blocks can simply reference previous blocks in the chain, resolving eventually, no matter the order in which they arrive in. 
 
-## 4) The Curse of Collaboration
-In a collaborative environment like canva, google docs, colab etc. the same set of styles is applied at 10s of places across the document. Each time, the style set/ set of delta changes is sent from the frontend to the backend. Instead, the style information, document information or the collaborator information can be sent once and referenced later. Instead of fetching all of user information everytime, references can resolve it prior to reaching the server side application while the frontend is never even made aware of this additional information except in the form of references.
+### 4) Repetetive Changes in Collaborative Environments
+In Canva, the same set of styles can be applied at tens of places in the design. The entire set of styles is sent each time, introducing additional overhead. RMP allows the style set to be sent once and referenced later any number of times.
