@@ -23,7 +23,7 @@ let rmp = new RMP({
 
 rmp.on("connected",()=>{
     console.log("[APP] connected");
-        if(params[2] == 3000){
+    if(params[2] == 3000){
         let message1 = {
             name:{
                 key:["targetValue"]
